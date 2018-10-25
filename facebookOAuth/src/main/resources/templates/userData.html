@@ -10,22 +10,19 @@
 
 </head>
 <body>
-<div class="container">
-	<h3>Name:</h3>
-	<h3>From:</h3>
-	<h3>Email:</h3>
+<div class="container" style="text-align:center;background-color:#C6AC7D;height: 400px;width: 50%;">
+	<h2 style="padding-top: 10px;">Profile Details</h2>
+	<h3>Name</h3><p th:text="${profie.name}"></p>
+	<h3>From</h3><p th:text="${profie.from}"></p>
+	<h3>Email</h3><p th:text="${profie.email}"></p>
 </div>
-<div class="container">
+<div class="container" style="background-color:#E7C3A9;height: 300px;width: 50%;">
 	<div th:if="${not #lists.isEmpty(photos)}">
-		<h2 style="text-align:center">My Photos</h2>
-		<table>
-        <tr>
-            <th>Photos</th>
-        </tr>
-      
+		<h2 style="text-align:center;padding-bottom: 50px;">Photos</h2>
+		<table align="center">
         <tr th:each="photo : ${photos}">
           <td>
-          	<img th:src="@{${photo.link}}" width="300" height="150"/>
+          	<img th:src="@{${photo.links}}" width="150" height="150"/>
           </td>
         </tr>
     </table>

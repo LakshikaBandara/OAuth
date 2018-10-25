@@ -30,136 +30,132 @@ import com.lakshika.facebookOAuth.facebookOAuth.Model.UserData;
 
 @Controller
 public class DataController {
-	
+
 	ArrayList<UserData> linkList = new ArrayList<>();
-	
-	@Value("${oauth.endpoint}") 
+
+	@Value("${oauth.endpoint}")
 	String AUTH_ENDPOINT;
-	
-    @Value("${oauth.responseType}") 
-    String RESPONSE_TYPE;
-    
-    @Value("${oauth.clientId}") 
-    String CLIENT_ID;
-    
-    @Value("${oauth.redirectionUri}") 
-    String REDIRECT_URI;
-    
-    @Value("${oauth.acope}") 
-    String SCOPE;
-    
-    @Value("${oauth.tokenEndpoint}") 
-    String TOKEN_ENDPOINT;
-    
-    @Value("${oauth.grantType}") 
-    String GRANT_TYPE;
-    
-    @Value("${oauth.clientSecret}") 
-    String CLIENT_SECRET;
-    
+
+	@Value("${oauth.responseType}")
+	String RESPONSE_TYPE;
+
+	@Value("${oauth.clientId}")
+	String CLIENT_ID;
+
+	@Value("${oauth.redirectionUri}")
+	String REDIRECT_URI;
+
+	@Value("${oauth.acope}")
+	String SCOPE;
+
+	@Value("${oauth.tokenEndpoint}")
+	String TOKEN_ENDPOINT;
+
+	@Value("${oauth.grantType}")
+	String GRANT_TYPE;
+
+	@Value("${oauth.clientSecret}")
+	String CLIENT_SECRET;
+
 	@RequestMapping("/")
 	public String MainPage() {
 		return "main";
 	}
-	
+
 	@RequestMapping(value = "/redirect", method = RequestMethod.GET)
 	public void getOAuthCode(HttpServletResponse httpServletResponse) {
-	    	  	   
-	    	   String requestEndpoint = null;
-			try {
-				requestEndpoint = AUTH_ENDPOINT + "?" +
-				            "response_type=" + RESPONSE_TYPE + "&" +
-				            "client_id=" + CLIENT_ID + "&" +
-				            "redirect_uri=" + URLEncoder.encode(REDIRECT_URI,"UTF-8" ) + "&" +
-				            "scope=" + URLEncoder.encode(SCOPE,"UTF-8" );
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}     
+
+		String requestEndpoint = null;
+		try {
+			requestEndpoint = AUTH_ENDPOINT + "?" + "response_type=" + RESPONSE_TYPE + "&" + "client_id=" + CLIENT_ID
+					+ "&" + "redirect_uri=" + URLEncoder.encode(REDIRECT_URI, "UTF-8") + "&" + "scope="
+					+ URLEncoder.encode(SCOPE, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		httpServletResponse.setHeader("Location", requestEndpoint);
+		httpServletResponse.setStatus(302);
+	}
+
+	@RequestMapping(value = "callback", method = RequestMethod.GET)
+	public String getAccessToken(@RequestParam("code") String token, Model model)
+			throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException {
 		
-	        httpServletResponse.setHeader("Location", requestEndpoint);
-	        httpServletResponse.setStatus(302);
-	 }
-	
-	@RequestMapping(value="callback", method = RequestMethod.GET)
-	public String getAccessToken(@RequestParam("code") String token,Model model) throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException{
-	    	    	
-	    	
-            HttpPost httpPost = new HttpPost(TOKEN_ENDPOINT +
-            		"?grant_type=" + GRANT_TYPE +
-                    "&code=" + token +
-                    "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI,"UTF-8") +
-                    "&client_id=" + CLIENT_ID);
-            
-         
-            String clientCredentials = CLIENT_ID + ":" + CLIENT_SECRET;
-            String encodedClientCredentials = new String(Base64.encodeBase64(clientCredentials.getBytes()));
-     
-            httpPost.setHeader("Authorization", "Basic " +encodedClientCredentials);
-            
-            CloseableHttpClient httpClient = HttpClients.createDefault();
-     
-            HttpResponse httpResponse = httpClient.execute(httpPost);
+		UserData ud = new UserData();
+		
+		HttpPost httpPost = new HttpPost(TOKEN_ENDPOINT + "?grant_type=" + GRANT_TYPE + "&code=" + token
+				+ "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, "UTF-8") + "&client_id=" + CLIENT_ID);
 
-   
-            Reader reader = new InputStreamReader
-                    (httpResponse.getEntity().getContent());
-            BufferedReader bufferedReader = new BufferedReader(reader);
-            String line = bufferedReader.readLine();
-        
-    
-            final JSONObject obj = new JSONObject(line);
-            String accessToken = obj.getString("access_token");
-            
-       
-    		JSONObject albums = new JSONObject(getResourceData("https://graph.facebook.com/v2.8/me/albums",accessToken));
-         
-    		for (int i = 0; i < albums.getJSONArray("data").length(); i++) {
-    	
-    		    JSONObject albumobject = albums.getJSONArray("data").getJSONObject(i);
-    		
-    		    String id = albumobject.getString("id");
-    	
-    		    JSONObject photos = new JSONObject(getResourceData("https://graph.facebook.com/v2.8/"+id+"/photos",accessToken));
-    		    
-            	for (int p = 0; p < photos.getJSONArray("data").length(); p++) {
-            
-        		    JSONObject photos_object = photos.getJSONArray("data").getJSONObject(p);
-        	
-        		    String p_id = photos_object.getString("id");
-        		   
-        	
-        		    JSONObject photo_object = new JSONObject(getResourceData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));	    
-        		    
-                    JSONObject image = photo_object.getJSONArray("images").getJSONObject(1);
-        		    String link = image.getString("source");
-        		    UserData ud = new UserData();
-                    ud.setLinks(link);
-               
-                    linkList.add(ud);
-            	}              
-    		}
-   
-    	model.addAttribute("photos", linkList);
+		String clientCredentials = CLIENT_ID + ":" + CLIENT_SECRET;
+		String encodedClientCredentials = new String(Base64.encodeBase64(clientCredentials.getBytes()));
 
-  	    return "userData";    
-	    }
-	
-	public String getResourceData(String url,String accessToken) throws IOException{
-    	
+		httpPost.setHeader("Authorization", "Basic " + encodedClientCredentials);
+
+		CloseableHttpClient httpClient = HttpClients.createDefault();
+
+		HttpResponse httpResponse = httpClient.execute(httpPost);
+
+		Reader reader = new InputStreamReader(httpResponse.getEntity().getContent());
+		BufferedReader bufferedReader = new BufferedReader(reader);
+		String line = bufferedReader.readLine();
+
+		final JSONObject obj = new JSONObject(line);
+		String accessToken = obj.getString("access_token");
+
+		JSONObject user = new JSONObject(getResourceData("https://graph.facebook.com/v2.8/me?fields=id,name,email,hometown", accessToken));
+		JSONObject albums = new JSONObject(getResourceData("https://graph.facebook.com/v2.8/me/albums?limits=1", accessToken));
+		System.out.println("user:"+user.toString());
+		ud.setName(user.getString("name"));
+		ud.setEmail(user.getString("email"));
+		ud.setFrom(user.getJSONObject("hometown").getString("name"));
+		
+		for (int i = 0; i < 1; i++) {
+
+			JSONObject albumobject = albums.getJSONArray("data").getJSONObject(i);
+
+			String id = albumobject.getString("id");
+
+			JSONObject photos = new JSONObject(
+					getResourceData("https://graph.facebook.com/v2.8/" + id + "/photos", accessToken));
+
+			for (int p = 0; p <1; p++) {
+
+				JSONObject photos_object = photos.getJSONArray("data").getJSONObject(p);
+
+				String p_id = photos_object.getString("id");
+
+				JSONObject photo_object = new JSONObject(
+						getResourceData("https://graph.facebook.com/" + p_id + "?fields=images", accessToken));
+
+				JSONObject image = photo_object.getJSONArray("images").getJSONObject(1);
+				String link = image.getString("source");
+				
+				ud.setLinks(link);
+
+				linkList.add(ud);
+			}
+		}
+		model.addAttribute("profie",ud);
+		model.addAttribute("photos", linkList);
+
+		return "userData";
+	}
+
+	public String getResourceData(String url, String accessToken) throws IOException {
+
 		URL urlobj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) urlobj.openConnection();
 		con.setRequestMethod("GET");
 
-	
 		con.setRequestProperty("Authorization", "Bearer " + accessToken);
 
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'GET' request to URL : " + url);
 		System.out.println("Response Code : " + responseCode);
 
-		BufferedReader in = new BufferedReader(
-		        new InputStreamReader(con.getInputStream()));
+		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		String inputLine;
 		StringBuffer response = new StringBuffer();
 
@@ -167,7 +163,7 @@ public class DataController {
 			response.append(inputLine);
 		}
 		in.close();
-	
+
 		return response.toString();
-}	
+	}
 }
