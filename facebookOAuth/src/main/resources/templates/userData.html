@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<title>Facebook Data Viewer</title>
+<title>Facebook My App</title>
 <script
 	src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script
@@ -11,9 +11,25 @@
 </head>
 <body>
 <div class="container">
-<h3>Name:</h3>
-<h3>From:</h3>
-<h3>Email:</h3>
+	<h3>Name:</h3>
+	<h3>From:</h3>
+	<h3>Email:</h3>
+</div>
+<div class="container">
+	<div th:if="${not #lists.isEmpty(photos)}">
+		<h2 style="text-align:center">My Photos</h2>
+		<table>
+        <tr>
+            <th>Photos</th>
+        </tr>
+      
+        <tr th:each="photo : ${photos}">
+          <td>
+          	<img th:src="@{${photo.link}}" width="300" height="150"/>
+          </td>
+        </tr>
+    </table>
+	</div>
 </div>
 </body>
 </html>
